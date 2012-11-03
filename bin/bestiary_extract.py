@@ -38,6 +38,7 @@ def get_page_heirarchy(filename):
 	fix_apostrophe(monsters)
 	fix_submonsters(monsters)
 	fix_assassin_vine(monsters)
+	fix_dragons(monsters)
 	return monsters, after['page']
 
 def fix_letters(heir):
@@ -86,6 +87,12 @@ def fix_apostrophe(heir):
 	for row in heir['children']:
 		if row['title'].find('&#8217;') > -1:
 			row['title'] = row['title'].replace('&#8217;', "'")
+
+def fix_dragons(heir):
+	for row in heir['children']:
+		if row['title'].find(" Dragon, ") > -1:
+			parts = row['title'].split(" Dragon, ")
+			row['title'] = "Dragon, %s, %s" %(parts[0], parts[1])
 
 def fix_submonsters(heir):
 	# Later bestiaries each have their own structure rules for monster
@@ -149,9 +156,7 @@ def build_heirarchy(parent, rows):
 			rows.insert(0, rec)
 			build_heirarchy(parent['children'][-1], rows)
 
-def break_out_the_beasts(filename, directory):
-	heir, last_page = get_page_heirarchy(filename)
-
+def save_the_beasts(filename, directory, heir, last_page):
 	if not os.path.exists(directory):
 		os.mkdir(directory)
 	for i in range(0, len(heir['children'])):
@@ -173,7 +178,12 @@ def break_out_the_beasts(filename, directory):
 		if os.path.exists(newfile):
 			sys.stderr.write("!!!!%s Already Exists\n" % newfile)
 		else:
-			sh.pdftk(filename, "cat", "%s-%s" %(row['page'], last_page), "output", newfile)
+			sh.pdftk(filename, "cat", "%s-%s" %(
+				row['page'], last_page), "output", newfile)
+
+def break_out_the_beasts(filename, directory):
+	heir, last_page = get_page_heirarchy(filename)
+	save_the_beasts(filename, directory, heir, last_page)
 
 def main():
 	usage =  "usage: %prog [options] [pdf filename] [out directory]\n\n"
@@ -183,7 +193,6 @@ def main():
 	if len(args) != 2:
 		sys.stderr.write("pdf filename and output directory required.\n")
 	break_out_the_beasts(args[0], args[1])
-
 
 def option_parser(usage):
 	parser = OptionParser(usage=usage)
