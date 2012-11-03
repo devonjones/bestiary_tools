@@ -164,11 +164,10 @@ def break_out_the_beasts(filename, directory):
 			last_page = row['page']
 		title = row['title']
 		pagedir = directory
-		if title.find(",") > -1:
-			subdir = title.split(",")[0]
-			pagedir = "%s/%s" % (directory, subdir)
-			if not os.path.exists(pagedir):
-				os.mkdir(pagedir)
+		subdir = title[0]
+		pagedir = "%s/%s" % (directory, subdir)
+		if not os.path.exists(pagedir):
+			os.mkdir(pagedir)
 		newfile = "%s/%s.pdf" %(pagedir, row['title'])
 		print "%s: %s-%s" %(newfile, row['page'], last_page)
 		if os.path.exists(newfile):
