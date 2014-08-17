@@ -3,6 +3,7 @@ import sys
 import os
 import os.path
 import sh
+from pprint import pprint
 from optparse import OptionParser
 
 def get_page_heirarchy(filename):
@@ -36,13 +37,14 @@ def get_page_heirarchy(filename):
 	fix_introduction(monsters)
 	fix_duplicate_names(monsters)
 	fix_apostrophe(monsters)
+	fix_leaf_ray(monsters)
 	fix_submonsters(monsters)
-	fix_assassin_vine(monsters)
 	fix_dragons(monsters)
+	fix_assassin_vine(monsters)
 	return monsters, after['page']
 
 def fix_letters(heir):
-	# Bestiary 2 & 3 break bookmarks up into A-Z as letters.
+	# Bestiary 2, 3 & 4 break bookmarks up into A-Z as letters.
 	if len(heir['children'][0]['title']) == 1:
 		newchildren = []
 		for row in heir['children']:
@@ -55,6 +57,14 @@ def fix_introduction(heir):
 		if row['title'].endswith(' Introduction'):
 			title = row['title'].replace(' Introduction', '')
 			row['title'] = title
+
+def fix_leaf_ray(heir):
+	# There's a defect in the index that includes Variant Leaf Rays as
+	# a top level monster.
+	for row in heir['children']:
+		if row['title'] == 'Variant Leaf Rays':
+			heir['children'].remove(row)
+			return
 
 def fix_assassin_vine(heir):
 	# For some odd reason, Assassin Vine is in the Bestiary twice.  The first
@@ -93,19 +103,24 @@ def fix_dragons(heir):
 		if row['title'].find(" Dragon, ") > -1:
 			parts = row['title'].split(" Dragon, ")
 			row['title'] = "Dragon, %s, %s" %(parts[0], parts[1])
+		elif row['title'].startswith("Dragon, "):
+			fix_dragons(row)
 
 def fix_submonsters(heir):
 	# Later bestiaries each have their own structure rules for monster
-	# bookmarks.  This function smooths that out for 1, 2 & 3
+	# bookmarks.  This function smooths that out for 1, 2, 3 & 4
 	newchildren = []
 	filterlist = [
 		'Angelic Choirs',
+		'Blood Hag Covens',
 		'Dragon Age Categories',
 		'Dragon Attacks and Speeds',
 		'Dragon Ability Scores',
+		'Drakainia Spawn',
 		'Vampire Spawn',
 		'Drow Noble',
 		'Graveknight Armor',
+		'Shobhad Longrifle',
 		'Thriae Merope',
 		'Witchfire Covens']
 	for row in heir['children']:
@@ -126,6 +141,9 @@ def fix_submonsters(heir):
 							if subchild['title'].find(",") > -1:
 								added.append(subchild)
 				elif child['title'].endswith(", Giant"):
+					added.append(child)
+				elif row['title'] == "Dragon, Outer" \
+						and child['title'].find(" Dragon,") > -1:
 					added.append(child)
 				# Include Parent:
 				#  parent starts on a page before first child exception
@@ -183,6 +201,7 @@ def save_the_beasts(filename, directory, heir, last_page):
 
 def break_out_the_beasts(filename, directory):
 	heir, last_page = get_page_heirarchy(filename)
+	#pprint(heir)
 	save_the_beasts(filename, directory, heir, last_page)
 
 def main():
